@@ -305,12 +305,21 @@ async function loadDropdowns() {
         const el = document.getElementById(id);
         if(el) el.innerHTML = fields.map(f => `<option value="${f.field_id}">${f.field_name}</option>`).join('');
     });
+    // ✅ FIX: Auto-load crops for the first field on page load
+    await loadCropsForField();
 }
 async function loadCropsForField() {
     const crops = await fetch(`${API}/crops`).then(r=>r.json());
-    const fieldId = document.getElementById('wu-field').value;
+    const wuField = document.getElementById('wu-field');
+    if (!wuField) return; // ✅ FIX: Skip if element doesn't exist yet
+    const fieldId = wuField.value;
     const filtered = crops.filter(c => c.field_id == fieldId);
-    document.getElementById('wu-crop').innerHTML = filtered.map(c => `<option value="${c.crop_id}">${c.crop_name}</option>`).join('');
+    const cropDropdown = document.getElementById('wu-crop');
+    if (cropDropdown) {
+        cropDropdown.innerHTML = filtered.length
+            ? filtered.map(c => `<option value="${c.crop_id}">${c.crop_name}</option>`).join('')
+            : '<option value="">No crops for this field</option>';
+    }
 }
 </script>
 </body>
