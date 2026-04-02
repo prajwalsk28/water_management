@@ -1,325 +1,963 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💧 Water Management System</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #333; }
-        
-        .header { background: linear-gradient(135deg, #1a6b3c, #2ecc71); color: white; padding: 20px 30px; }
-        .header h1 { font-size: 24px; } 
-        .header p { opacity: 0.8; font-size: 14px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💧 Water Management System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#333;}
 
-        .nav { display: flex; gap: 5px; background: #1a6b3c; padding: 0 30px; }
-        .nav button { background: none; border: none; color: white; padding: 12px 20px; cursor: pointer; font-size: 14px; border-bottom: 3px solid transparent; }
-        .nav button.active, .nav button:hover { border-bottom-color: #2ecc71; background: rgba(255,255,255,0.1); }
+/* LOGIN */
+#login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a6b3c,#2ecc71);}
+.login-box{background:white;padding:40px;border-radius:16px;width:360px;box-shadow:0 10px 40px rgba(0,0,0,0.2);}
+.login-box h2{color:#1a6b3c;text-align:center;margin-bottom:8px;font-size:22px;}
+.login-box p{text-align:center;color:#888;font-size:13px;margin-bottom:24px;}
+.login-box input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;}
+.login-box input:focus{outline:none;border-color:#2ecc71;}
+.login-btn{width:100%;background:#1a6b3c;color:white;border:none;padding:13px;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600;}
+.login-btn:hover{background:#145c32;}
+.login-error{color:#e74c3c;text-align:center;font-size:13px;margin-top:10px;display:none;}
 
-        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
-        .page { display: none; } .page.active { display: block; }
+/* HEADER & NAV */
+#app-page{display:none;}
+.header{background:linear-gradient(135deg,#1a6b3c,#2ecc71);color:white;padding:14px 30px;display:flex;justify-content:space-between;align-items:center;}
+.header h1{font-size:20px;}
+.header-right{display:flex;align-items:center;gap:12px;font-size:13px;}
+.logout-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:white;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;}
+.logout-btn:hover{background:rgba(255,255,255,0.3);}
+.nav{display:flex;gap:2px;background:#145c32;padding:0 20px;flex-wrap:wrap;}
+.nav button{background:none;border:none;color:white;padding:11px 16px;cursor:pointer;font-size:13px;border-bottom:3px solid transparent;}
+.nav button.active,.nav button:hover{border-bottom-color:#2ecc71;background:rgba(255,255,255,0.1);}
+.container{max-width:1200px;margin:24px auto;padding:0 20px;}
+.page{display:none;}.page.active{display:block;}
 
-        .card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .card h2 { color: #1a6b3c; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #e8f5e9; padding-bottom: 10px; }
+/* CARDS */
+.card{background:white;border-radius:10px;padding:22px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+.card h2{color:#1a6b3c;margin-bottom:14px;font-size:17px;border-bottom:2px solid #e8f5e9;padding-bottom:10px;}
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        input:focus, select:focus { outline: none; border-color: #2ecc71; }
-        label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;}
+label{font-size:12px;color:#666;margin-bottom:3px;display:block;}
+input,select{width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;}
+input:focus,select:focus{outline:none;border-color:#2ecc71;}
 
-        .btn { background: #1a6b3c; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-        .btn:hover { background: #145c32; }
+/* BUTTONS */
+.btn{background:#1a6b3c;color:white;border:none;padding:9px 20px;border-radius:6px;cursor:pointer;font-size:13px;}
+.btn:hover{background:#145c32;}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:4px;border:none;cursor:pointer;color:white;}
+.btn-edit{background:#2980b9;}
+.btn-edit:hover{background:#1f6391;}
+.btn-del{background:#e74c3c;}
+.btn-del:hover{background:#c0392b;}
+.btn-status{background:#e67e22;}
+.btn-status:hover{background:#ca6f1e;}
+.btn-outline{background:none;border:1px solid #1a6b3c;color:#1a6b3c;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px;}
+.btn-outline:hover{background:#e8f5e9;}
 
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th { background: #e8f5e9; color: #1a6b3c; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #f0f0f0; }
-        tr:hover td { background: #fafff9; }
+/* SEARCH BAR */
+.search-bar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap;}
+.search-bar input{flex:1;min-width:200px;padding:8px 12px;}
+.search-bar select{width:auto;padding:8px 12px;}
 
-        .badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .badge.Overuse { background: #ffe0e0; color: #c0392b; }
-        .badge.Shortage { background: #fff3cd; color: #856404; }
-        .badge.Normal { background: #d4edda; color: #155724; }
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:#e8f5e9;color:#1a6b3c;padding:10px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;}
+td{padding:9px 10px;border-bottom:1px solid #f0f0f0;}
+tr:hover td{background:#fafff9;}
 
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-box { background: white; border-radius: 10px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-top: 4px solid #2ecc71; }
-        .stat-box .number { font-size: 32px; font-weight: bold; color: #1a6b3c; }
-        .stat-box .label { font-size: 13px; color: #666; margin-top: 5px; }
+/* BADGES */
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:bold;}
+.badge.Overuse{background:#ffe0e0;color:#c0392b;}
+.badge.Shortage{background:#fff3cd;color:#856404;}
+.badge.Normal{background:#d4edda;color:#155724;}
+.badge.Done{background:#d4edda;color:#155724;}
+.badge.Pending{background:#fff3cd;color:#856404;}
+.badge.Skipped{background:#f8d7da;color:#721c24;}
 
-        .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
-        .alert.overuse { background: #ffe0e0; border-left: 4px solid #c0392b; color: #c0392b; }
-        .alert.shortage { background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; }
-    </style>
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px;}
+.stat-box{background:white;border-radius:10px;padding:18px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.07);border-top:4px solid #2ecc71;}
+.stat-box .number{font-size:30px;font-weight:bold;color:#1a6b3c;}
+.stat-box .label{font-size:12px;color:#666;margin-top:4px;}
+
+/* ALERTS */
+.alert-item{padding:11px 14px;border-radius:6px;margin-bottom:8px;font-size:13px;}
+.alert-item.overuse{background:#ffe0e0;border-left:4px solid #c0392b;color:#c0392b;}
+.alert-item.shortage{background:#fff3cd;border-left:4px solid #ffc107;color:#856404;}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:18px;margin-bottom:18px;}
+.chart-box{background:white;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+.chart-box h3{color:#1a6b3c;font-size:15px;margin-bottom:14px;}
+canvas{max-height:260px;}
+
+/* SUMMARY TABLE */
+.summary-bar{height:10px;border-radius:5px;background:#e8f5e9;overflow:hidden;margin-top:4px;}
+.summary-fill{height:100%;border-radius:5px;transition:width 0.5s;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:white;border-radius:12px;padding:28px;width:480px;max-width:95vw;}
+.modal h3{color:#1a6b3c;margin-bottom:18px;font-size:17px;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:#1a6b3c;color:white;padding:12px 20px;border-radius:8px;font-size:14px;display:none;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+</style>
 </head>
 <body>
 
-<div class="header">
-    <h1>💧 Agricultural Water Management System</h1>
-    <p>Track farmers, fields, crops & water usage efficiently</p>
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <div class="login-box">
+    <h2>💧 Water Management</h2>
+    <p>Agricultural Water Management System</p>
+    <input id="login-user" type="text" placeholder="Username">
+    <input id="login-pass" type="password" placeholder="Password">
+    <button class="login-btn" onclick="doLogin()">Login</button>
+    <div class="login-error" id="login-error">Invalid username or password</div>
+    <p style="margin-top:16px;font-size:11px;color:#aaa;text-align:center;">Demo: admin / admin123</p>
+  </div>
 </div>
 
+<!-- MAIN APP -->
+<div id="app-page">
+<div class="header">
+  <h1>💧 Agricultural Water Management System</h1>
+  <div class="header-right">
+    <span id="welcome-msg">Welcome!</span>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
+</div>
 <div class="nav">
-    <button class="active" onclick="showPage('dashboard')">📊 Dashboard</button>
-    <button onclick="showPage('farmers')">👨‍🌾 Farmers</button>
-    <button onclick="showPage('fields')">🌾 Fields</button>
-    <button onclick="showPage('crops')">🌱 Crops</button>
-    <button onclick="showPage('irrigation')">🚿 Irrigation</button>
-    <button onclick="showPage('water')">💦 Water Usage</button>
+  <button class="active" onclick="showPage('dashboard',this)">📊 Dashboard</button>
+  <button onclick="showPage('farmers',this)">👨‍🌾 Farmers</button>
+  <button onclick="showPage('fields',this)">🌾 Fields</button>
+  <button onclick="showPage('crops',this)">🌱 Crops</button>
+  <button onclick="showPage('irrigation',this)">🚿 Irrigation</button>
+  <button onclick="showPage('water',this)">💦 Water Usage</button>
+  <button onclick="showPage('rainwater',this)">🌧️ Rain Harvesting</button>
+  <button onclick="showPage('messages',this)">📱 Messages</button>
+  <button onclick="showPage('summary',this)">📈 Summary</button>
 </div>
 
 <div class="container">
 
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="page active">
-        <div class="stats">
-            <div class="stat-box"><div class="number" id="count-farmers">-</div><div class="label">Farmers Registered</div></div>
-            <div class="stat-box"><div class="number" id="count-fields">-</div><div class="label">Fields Tracked</div></div>
-            <div class="stat-box"><div class="number" id="count-crops">-</div><div class="label">Crops Active</div></div>
-            <div class="stat-box"><div class="number" id="count-alerts">-</div><div class="label">Water Alerts</div></div>
-        </div>
-        <div class="card">
-            <h2>⚠️ Water Alerts (Overuse / Shortage)</h2>
-            <div id="alerts-container">Loading...</div>
-        </div>
-    </div>
-
-    <!-- FARMERS -->
-    <div id="farmers" class="page">
-        <div class="card">
-            <h2>➕ Add Farmer</h2>
-            <div class="form-grid">
-                <div><label>Full Name</label><input id="f-name" placeholder="e.g. Ramesh Kumar"></div>
-                <div><label>Phone Number</label><input id="f-phone" placeholder="e.g. 9876543210"></div>
-                <div><label>Village</label><input id="f-village" placeholder="e.g. Nagpur"></div>
-            </div>
-            <button class="btn" onclick="addFarmer()">Add Farmer</button>
-        </div>
-        <div class="card">
-            <h2>📋 All Farmers</h2>
-            <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Village</th><th>Registered</th></tr></thead>
-            <tbody id="farmers-table"><tr><td colspan="5">Loading...</td></tr></tbody></table>
-        </div>
-    </div>
-
-    <!-- FIELDS -->
-    <div id="fields" class="page">
-        <div class="card">
-            <h2>➕ Add Field</h2>
-            <div class="form-grid">
-                <div><label>Farmer</label><select id="fi-farmer"></select></div>
-                <div><label>Field Name</label><input id="fi-name" placeholder="e.g. North Farm"></div>
-                <div><label>Area (Acres)</label><input id="fi-area" type="number" placeholder="e.g. 2.5"></div>
-                <div><label>Soil Type</label>
-                    <select id="fi-soil">
-                        <option>Clay</option><option>Sandy</option><option>Loamy</option><option>Silt</option><option>Black</option>
-                    </select>
-                </div>
-                <div><label>Location</label><input id="fi-location" placeholder="e.g. East Block, Village"></div>
-            </div>
-            <button class="btn" onclick="addField()">Add Field</button>
-        </div>
-        <div class="card">
-            <h2>📋 All Fields</h2>
-            <table><thead><tr><th>ID</th><th>Farmer</th><th>Field Name</th><th>Area</th><th>Soil</th><th>Location</th></tr></thead>
-            <tbody id="fields-table"><tr><td colspan="6">Loading...</td></tr></tbody></table>
-        </div>
-    </div>
-
-    <!-- CROPS -->
-    <div id="crops" class="page">
-        <div class="card">
-            <h2>➕ Add Crop</h2>
-            <div class="form-grid">
-                <div><label>Field</label><select id="cr-field"></select></div>
-                <div><label>Crop Name</label><input id="cr-name" placeholder="e.g. Wheat, Rice"></div>
-                <div><label>Sowing Date</label><input id="cr-sow" type="date"></div>
-                <div><label>Harvest Date</label><input id="cr-harvest" type="date"></div>
-                <div><label>Water Requirement (Liters)</label><input id="cr-water" type="number" placeholder="e.g. 5000"></div>
-            </div>
-            <button class="btn" onclick="addCrop()">Add Crop</button>
-        </div>
-        <div class="card">
-            <h2>📋 All Crops</h2>
-            <table><thead><tr><th>ID</th><th>Field</th><th>Crop</th><th>Sowing</th><th>Harvest</th><th>Water Req (L)</th></tr></thead>
-            <tbody id="crops-table"><tr><td colspan="6">Loading...</td></tr></tbody></table>
-        </div>
-    </div>
-
-    <!-- IRRIGATION -->
-    <div id="irrigation" class="page">
-        <div class="card">
-            <h2>➕ Schedule Irrigation</h2>
-            <div class="form-grid">
-                <div><label>Field</label><select id="ir-field"></select></div>
-                <div><label>Date</label><input id="ir-date" type="date"></div>
-                <div><label>Duration (Minutes)</label><input id="ir-duration" type="number" placeholder="e.g. 30"></div>
-                <div><label>Method</label>
-                    <select id="ir-method">
-                        <option>Drip</option><option>Sprinkler</option><option>Flood</option><option>Furrow</option>
-                    </select>
-                </div>
-            </div>
-            <button class="btn" onclick="addIrrigation()">Schedule</button>
-        </div>
-        <div class="card">
-            <h2>📋 Irrigation Schedule</h2>
-            <table><thead><tr><th>ID</th><th>Field</th><th>Date</th><th>Duration</th><th>Method</th><th>Status</th></tr></thead>
-            <tbody id="irrigation-table"><tr><td colspan="6">Loading...</td></tr></tbody></table>
-        </div>
-    </div>
-
-    <!-- WATER USAGE -->
-    <div id="water" class="page">
-        <div class="card">
-            <h2>➕ Log Water Usage</h2>
-            <div class="form-grid">
-                <div><label>Field</label><select id="wu-field" onchange="loadCropsForField()"></select></div>
-                <div><label>Crop</label><select id="wu-crop"></select></div>
-                <div><label>Date</label><input id="wu-date" type="date"></div>
-                <div><label>Water Used (Liters)</label><input id="wu-used" type="number" placeholder="e.g. 4500"></div>
-                <div><label>Water Required (Liters)</label><input id="wu-required" type="number" placeholder="e.g. 5000"></div>
-            </div>
-            <button class="btn" onclick="addWaterUsage()">Log Usage</button>
-        </div>
-        <div class="card">
-            <h2>📋 Water Usage Log</h2>
-            <table><thead><tr><th>Date</th><th>Field</th><th>Crop</th><th>Used (L)</th><th>Required (L)</th><th>Status</th></tr></thead>
-            <tbody id="water-table"><tr><td colspan="6">Loading...</td></tr></tbody></table>
-        </div>
-    </div>
-
+<!-- DASHBOARD -->
+<div id="dashboard" class="page active">
+  <div class="stats">
+    <div class="stat-box"><div class="number" id="cnt-farmers">-</div><div class="label">Farmers</div></div>
+    <div class="stat-box"><div class="number" id="cnt-fields">-</div><div class="label">Fields</div></div>
+    <div class="stat-box"><div class="number" id="cnt-crops">-</div><div class="label">Crops</div></div>
+    <div class="stat-box"><div class="number" id="cnt-alerts">-</div><div class="label">Active Alerts</div></div>
+    <div class="stat-box" style="border-top-color:#3498db;"><div class="number" id="cnt-rainwater">-</div><div class="label">Total Rainwater (L)</div></div>
+    <div class="stat-box" style="border-top-color:#9b59b6;"><div class="number" id="cnt-rain-events">-</div><div class="label">Rain Events</div></div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-box"><h3>💧 Water Used vs Required (Per Field)</h3><canvas id="barChart"></canvas></div>
+    <div class="chart-box"><h3>⚠️ Alert Distribution</h3><canvas id="pieChart"></canvas></div>
+    <div class="chart-box"><h3>🌧️ Rainwater Collection</h3><canvas id="dashRainChart"></canvas></div>
+  </div>
+  <div class="card"><h2>⚠️ Water Alerts</h2><div id="alerts-container">Loading...</div></div>
 </div>
+
+<!-- FARMERS -->
+<div id="farmers" class="page">
+  <div class="card">
+    <h2>➕ Add Farmer</h2>
+    <div class="form-grid">
+      <div><label>Full Name *</label><input id="f-name" placeholder="e.g. Ramesh Kumar"></div>
+      <div><label>Phone</label><input id="f-phone" placeholder="e.g. 9876543210"></div>
+      <div><label>Village</label><input id="f-village" placeholder="e.g. Nagpur"></div>
+      <div><label>Login Username</label><input id="f-uname" placeholder="e.g. ramesh28"></div>
+      <div><label>Login Password</label><input id="f-upass" type="password" placeholder="Set a password"></div>
+    </div>
+    <button class="btn" onclick="addFarmer()">Add Farmer</button>
+  </div>
+  <div class="card">
+    <h2>📋 All Farmers</h2>
+    <div class="search-bar">
+      <input id="search-farmers" placeholder="🔍 Search by name or village..." oninput="filterTable('farmers-table',this.value,[1,3])">
+    </div>
+    <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Village</th><th>Registered</th><th>Actions</th></tr></thead>
+    <tbody id="farmers-table"></tbody></table>
+  </div>
+</div>
+
+<!-- FIELDS -->
+<div id="fields" class="page">
+  <div class="card">
+    <h2>➕ Add Field</h2>
+    <div class="form-grid">
+      <div><label>Farmer</label><select id="fi-farmer"></select></div>
+      <div><label>Field Name</label><input id="fi-name" placeholder="e.g. North Farm"></div>
+      <div><label>Area (Acres)</label><input id="fi-area" type="number" placeholder="e.g. 2.5"></div>
+      <div><label>Soil Type</label><select id="fi-soil"><option>Clay</option><option>Sandy</option><option>Loamy</option><option>Silt</option><option>Black</option></select></div>
+      <div><label>Location</label><input id="fi-location" placeholder="e.g. East Block"></div>
+    </div>
+    <button class="btn" onclick="addField()">Add Field</button>
+  </div>
+  <div class="card">
+    <h2>📋 All Fields</h2>
+    <div class="search-bar">
+      <input id="search-fields" placeholder="🔍 Search by field name or farmer..." oninput="filterTable('fields-table',this.value,[1,2])">
+      <select onchange="filterTable('fields-table',this.value,[4])"><option value="">All Soil Types</option><option>Clay</option><option>Sandy</option><option>Loamy</option><option>Silt</option><option>Black</option></select>
+    </div>
+    <table><thead><tr><th>ID</th><th>Farmer</th><th>Field Name</th><th>Area</th><th>Soil</th><th>Location</th><th>Actions</th></tr></thead>
+    <tbody id="fields-table"></tbody></table>
+  </div>
+</div>
+
+<!-- CROPS -->
+<div id="crops" class="page">
+  <div class="card">
+    <h2>➕ Add Crop</h2>
+    <div class="form-grid">
+      <div><label>Field</label><select id="cr-field"></select></div>
+      <div><label>Crop Name</label><input id="cr-name" placeholder="e.g. Wheat"></div>
+      <div><label>Sowing Date</label><input id="cr-sow" type="date"></div>
+      <div><label>Harvest Date</label><input id="cr-harvest" type="date"></div>
+      <div><label>Water Requirement (L)</label><input id="cr-water" type="number" placeholder="e.g. 5000"></div>
+    </div>
+    <button class="btn" onclick="addCrop()">Add Crop</button>
+  </div>
+  <div class="card">
+    <h2>📋 All Crops</h2>
+    <div class="search-bar">
+      <input id="search-crops" placeholder="🔍 Search by crop or field name..." oninput="filterTable('crops-table',this.value,[1,2])">
+    </div>
+    <table><thead><tr><th>ID</th><th>Field</th><th>Crop</th><th>Sowing</th><th>Harvest</th><th>Water Req (L)</th><th>Actions</th></tr></thead>
+    <tbody id="crops-table"></tbody></table>
+  </div>
+</div>
+
+<!-- IRRIGATION -->
+<div id="irrigation" class="page">
+  <div class="card">
+    <h2>➕ Schedule Irrigation</h2>
+    <div class="form-grid">
+      <div><label>Field</label><select id="ir-field"></select></div>
+      <div><label>Date</label><input id="ir-date" type="date"></div>
+      <div><label>Duration (Minutes)</label><input id="ir-duration" type="number" placeholder="e.g. 30"></div>
+      <div><label>Method</label><select id="ir-method"><option>Drip</option><option>Sprinkler</option><option>Flood</option><option>Furrow</option></select></div>
+    </div>
+    <button class="btn" onclick="addIrrigation()">Schedule</button>
+  </div>
+  <div class="card">
+    <h2>📋 Irrigation Schedule</h2>
+    <div class="search-bar">
+      <input id="search-irr" placeholder="🔍 Search by field or method..." oninput="filterTable('irrigation-table',this.value,[1,4])">
+      <select onchange="filterTable('irrigation-table',this.value,[5])"><option value="">All Status</option><option>Pending</option><option>Done</option><option>Skipped</option></select>
+    </div>
+    <table><thead><tr><th>ID</th><th>Field</th><th>Date</th><th>Duration</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="irrigation-table"></tbody></table>
+  </div>
+</div>
+
+<!-- WATER USAGE -->
+<div id="water" class="page">
+  <div class="card">
+    <h2>➕ Log Water Usage</h2>
+    <div class="form-grid">
+      <div><label>Field</label><select id="wu-field" onchange="loadCropsForField()"></select></div>
+      <div><label>Crop</label><select id="wu-crop"></select></div>
+      <div><label>Date</label><input id="wu-date" type="date"></div>
+      <div><label>Water Used (L)</label><input id="wu-used" type="number" placeholder="e.g. 4500"></div>
+      <div><label>Water Required (L)</label><input id="wu-required" type="number" placeholder="e.g. 5000"></div>
+    </div>
+    <button class="btn" onclick="addWaterUsage()">Log Usage</button>
+  </div>
+  <div class="card">
+    <h2>📋 Water Usage Log</h2>
+    <div class="search-bar">
+      <input id="search-water" placeholder="🔍 Search by field or crop..." oninput="filterTable('water-table',this.value,[1,2])">
+      <input id="date-from" type="date" title="From date" onchange="loadWaterUsage()">
+      <input id="date-to" type="date" title="To date" onchange="loadWaterUsage()">
+      <button class="btn-outline" onclick="clearDateFilter()">Clear</button>
+    </div>
+    <table><thead><tr><th>Date</th><th>Field</th><th>Crop</th><th>Farmer</th><th>Used (L)</th><th>Required (L)</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="water-table"></tbody></table>
+  </div>
+</div>
+
+<!-- RAINWATER HARVESTING -->
+<div id="rainwater" class="page">
+  <div class="card">
+    <h2>➕ Log Rainwater Event</h2>
+    <div class="form-grid">
+      <div><label>Field</label><select id="rw-field"></select></div>
+      <div><label>Date</label><input id="rw-date" type="date"></div>
+      <div><label>Rain Speed (ml/min)</label><input id="rw-speed" type="number" placeholder="e.g. 50" step="0.1"></div>
+      <div><label>Duration (minutes)</label><input id="rw-duration" type="number" placeholder="e.g. 120"></div>
+      <div><label>Auto-Calculated Collected (L)</label><input id="rw-collected" type="number" readonly placeholder="Auto-filled"></div>
+      <div><label>Notes</label><input id="rw-notes" placeholder="Optional notes about weather conditions"></div>
+    </div>
+    <button class="btn" onclick="calculateCollected()">Calculate</button>
+    <button class="btn" onclick="addRainwaterEvent()" style="background:#27ae60;margin-left:8px;">Log Event</button>
+  </div>
+  <div class="card">
+    <h2>📋 Rainwater Events Log</h2>
+    <div class="search-bar">
+      <input id="search-rainwater" placeholder="🔍 Search by field..." oninput="filterTable('rainwater-table',this.value,[1])">
+    </div>
+    <table><thead><tr><th>Date</th><th>Field</th><th>Speed (ml/min)</th><th>Duration (min)</th><th>Collected (L)</th><th>Notes</th><th>Actions</th></tr></thead>
+    <tbody id="rainwater-table"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>💧 Rainwater Reserve Statistics</h2>
+    <div class="form-grid">
+      <div><label>Select Field</label><select id="rw-calc-field" onchange="calculateReserveStats()"></select></div>
+    </div>
+    <div id="reserve-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+      <div class="stat-box"><div class="number" id="stat-collected">-</div><div class="label">Total Collected (L)</div></div>
+      <div class="stat-box"><div class="number" id="stat-reserve-pct">-</div><div class="label">Reserve %</div></div>
+      <div class="stat-box"><div class="number" id="stat-reserve-days">-</div><div class="label">Reserve Days</div></div>
+      <div class="stat-box"><div class="number" id="stat-avg-rain">-</div><div class="label">Avg Rainfall (ml/min)</div></div>
+      <div class="stat-box"><div class="number" id="stat-avg-usage">-</div><div class="label">Avg Daily Usage (L)</div></div>
+    </div>
+    <div class="chart-grid" style="margin-top:18px;">
+      <div class="chart-box"><h3>🌧️ Rainwater Collection Over Time</h3><canvas id="rainChart"></canvas></div>
+      <div class="chart-box"><h3>📊 Reserve Projection</h3><canvas id="reserveChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- MESSAGES -->
+<div id="messages" class="page">
+  <div class="card">
+    <h2>📱 Send Field Alert</h2>
+    <div class="form-grid">
+      <div><label>Field</label><select id="msg-field"></select></div>
+      <div><label>Alert Type</label><select id="msg-type"><option value="flood">⚠️ Flood Warning</option><option value="calamity">🌪️ Calamity Alert</option><option value="drought">🏜️ Drought Alert</option><option value="emergency">🚨 Emergency</option></select></div>
+      <div style="grid-column: 1 / -1;"><label>Message</label><textarea id="msg-text" placeholder="Type your alert message..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;"></textarea></div>
+    </div>
+    <button class="btn" onclick="sendMessage()">Send Alert</button>
+  </div>
+  <div class="card">
+    <h2>📋 Alert History</h2>
+    <div id="messages-log" style="max-height:400px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div id="summary" class="page">
+  <div class="card">
+    <h2>📈 Total Water Usage Summary — Per Farmer</h2>
+    <div class="search-bar">
+      <input id="search-summary" placeholder="🔍 Search farmer..." oninput="filterTable('summary-table',this.value,[0])">
+    </div>
+    <table>
+      <thead><tr><th>Farmer</th><th>Village</th><th>Fields</th><th>Crops</th><th>Total Used (L)</th><th>Total Required (L)</th><th>Rainwater (L)</th><th>Usage %</th><th>Overuse</th><th>Shortage</th></tr></thead>
+      <tbody id="summary-table"></tbody>
+    </table>
+  </div>
+  <div class="chart-box" style="background:white;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+    <h3 style="color:#1a6b3c;font-size:15px;margin-bottom:14px;">💧 Water Used vs Required Per Farmer</h3>
+    <canvas id="summaryChart"></canvas>
+  </div>
+</div>
+
+</div><!-- container -->
+</div><!-- app-page -->
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3 id="modal-title">Edit</h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
 
 <script>
 const API = 'http://localhost:3000/api';
+let currentUser = null;
+let editContext = {};
+let barChartInst, pieChartInst, summaryChartInst;
 
-// Page navigation
-function showPage(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-    document.getElementById(page).classList.add('active');
-    event.target.classList.add('active');
-    if(page === 'fields' || page === 'crops' || page === 'irrigation' || page === 'water') loadDropdowns();
+// ========== LOGIN ==========
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value.trim();
+  if (!username || !password) return;
+  try {
+    const r = await fetch(`${API}/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password}) });
+    const data = await r.json();
+    if (!r.ok) { document.getElementById('login-error').style.display = 'block'; return; }
+    currentUser = data.user;
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('app-page').style.display = 'block';
+    document.getElementById('welcome-msg').textContent = `Welcome, ${data.user.farmer_name}!`;
+    loadAll();
+  } catch(e) { document.getElementById('login-error').style.display = 'block'; }
+}
+document.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').style.display = 'none';
 }
 
-// Load all data on start
-window.onload = () => { loadAll(); };
-
-function loadAll() {
-    loadFarmers(); loadFields(); loadCrops(); loadIrrigation(); loadWaterUsage(); loadDashboard();
+// ========== NAVIGATION ==========
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(page).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(['fields','crops','irrigation','water','rainwater','messages'].includes(page)) loadDropdowns();
+  if(page === 'summary') loadSummary();
+  if(page === 'rainwater') { loadRainwater(); loadDashboard(); }
+  if(page === 'messages') renderMessageLog();
 }
 
-// ---- DASHBOARD ----
+// ========== TOAST ==========
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='error' ? '#e74c3c' : '#1a6b3c';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2800);
+}
+
+// ========== LOAD ALL ==========
+function loadAll() { loadFarmers(); loadFields(); loadCrops(); loadIrrigation(); loadWaterUsage(); loadRainwater(); loadDashboard(); }
+
+// ========== DASHBOARD ==========
 async function loadDashboard() {
-    const [farmers, fields, crops, water] = await Promise.all([
-        fetch(`${API}/farmers`).then(r=>r.json()),
-        fetch(`${API}/fields`).then(r=>r.json()),
-        fetch(`${API}/crops`).then(r=>r.json()),
-        fetch(`${API}/water-usage`).then(r=>r.json())
-    ]);
-    document.getElementById('count-farmers').textContent = farmers.length;
-    document.getElementById('count-fields').textContent = fields.length;
-    document.getElementById('count-crops').textContent = crops.length;
-    const alerts = water.filter(w => w.status !== 'Normal');
-    document.getElementById('count-alerts').textContent = alerts.length;
-    const alertsDiv = document.getElementById('alerts-container');
-    if(alerts.length === 0) { alertsDiv.innerHTML = '<p style="color:green">✅ No alerts! Water usage is normal for all fields.</p>'; return; }
-    alertsDiv.innerHTML = alerts.map(a => `
-        <div class="alert ${a.status.toLowerCase()}">
-            <strong>${a.status === 'Overuse' ? '🔴' : '🟡'} ${a.status}</strong> — 
-            Field: <strong>${a.field_name}</strong> | Crop: ${a.crop_name} | 
-            Used: ${a.water_used_liters}L | Required: ${a.water_required_liters}L | Date: ${a.date_logged}
-        </div>`).join('');
+  const [farmers, fields, crops, water, chart, rainwater] = await Promise.all([
+    fetch(`${API}/farmers`).then(r=>r.json()),
+    fetch(`${API}/fields`).then(r=>r.json()),
+    fetch(`${API}/crops`).then(r=>r.json()),
+    fetch(`${API}/water-usage`).then(r=>r.json()),
+    fetch(`${API}/chart-data`).then(r=>r.json()),
+    fetch(`${API}/rainwater`).then(r=>r.json()).catch(()=>[])
+  ]);
+  document.getElementById('cnt-farmers').textContent = farmers.length;
+  document.getElementById('cnt-fields').textContent = fields.length;
+  document.getElementById('cnt-crops').textContent = crops.length;
+  const alerts = water.filter(w => w.status !== 'Normal');
+  document.getElementById('cnt-alerts').textContent = alerts.length;
+  
+  const totalRainwater = rainwater.reduce((sum, r) => sum + (r.collected_liters || 0), 0);
+  document.getElementById('cnt-rainwater').textContent = totalRainwater.toLocaleString();
+  document.getElementById('cnt-rain-events').textContent = rainwater.length;
+
+  const alertsDiv = document.getElementById('alerts-container');
+  if(!alerts.length) { alertsDiv.innerHTML = '<p style="color:green;font-size:14px">✅ No alerts! All water usage is normal.</p>'; }
+  else alertsDiv.innerHTML = alerts.map(a => `
+    <div class="alert-item ${a.status.toLowerCase()}">
+      <strong>${a.status==='Overuse'?'🔴':'🟡'} ${a.status}</strong> —
+      Field: <strong>${a.field_name}</strong> | Crop: ${a.crop_name} |
+      Used: ${a.water_used_liters}L | Required: ${a.water_required_liters}L | Date: ${a.date_logged?.split('T')[0]}
+    </div>`).join('');
+
+  // Bar Chart
+  if(barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: chart.map(c => c.field_name),
+      datasets: [
+        { label:'Water Used (L)', data: chart.map(c=>c.used), backgroundColor:'rgba(46,204,113,0.7)', borderColor:'#1a6b3c', borderWidth:1 },
+        { label:'Water Required (L)', data: chart.map(c=>c.required), backgroundColor:'rgba(52,152,219,0.7)', borderColor:'#2980b9', borderWidth:1 }
+      ]
+    },
+    options: { responsive:true, plugins:{ legend:{ position:'top' } }, scales:{ y:{ beginAtZero:true } } }
+  });
+
+  // Pie Chart
+  const normal = water.filter(w=>w.status==='Normal').length;
+  const overuse = water.filter(w=>w.status==='Overuse').length;
+  const shortage = water.filter(w=>w.status==='Shortage').length;
+  if(pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Normal','Overuse','Shortage'],
+      datasets: [{ data:[normal,overuse,shortage], backgroundColor:['#2ecc71','#e74c3c','#f39c12'], borderWidth:2 }]
+    },
+    options: { responsive:true, plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  // Rainwater Chart
+  if(rainwater.length > 0 && document.getElementById('dashRainChart')) {
+    const rainByField = {};
+    rainwater.forEach(r => {
+      if(!rainByField[r.field_name]) rainByField[r.field_name] = 0;
+      rainByField[r.field_name] += r.collected_liters || 0;
+    });
+    if(window.dashRainChartInst) window.dashRainChartInst.destroy();
+    window.dashRainChartInst = new Chart(document.getElementById('dashRainChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(rainByField),
+        datasets: [{ label:'Collected (L)', data:Object.values(rainByField), backgroundColor:'rgba(52,183,235,0.7)', borderColor:'#3498db', borderWidth:1 }]
+      },
+      options: { responsive:true, plugins:{ legend:{ position:'top' } }, scales:{ y:{ beginAtZero:true } } }
+    });
+  }
 }
 
-// ---- FARMERS ----
+// ========== FARMERS ==========
 async function loadFarmers() {
-    const data = await fetch(`${API}/farmers`).then(r=>r.json());
-    document.getElementById('farmers-table').innerHTML = data.map(f => `
-        <tr><td>${f.farmer_id}</td><td>${f.name}</td><td>${f.phone}</td><td>${f.village}</td><td>${new Date(f.created_at).toLocaleDateString()}</td></tr>`).join('') || '<tr><td colspan="5">No farmers yet.</td></tr>';
+  const data = await fetch(`${API}/farmers`).then(r=>r.json());
+  document.getElementById('farmers-table').innerHTML = data.map(f => `
+    <tr>
+      <td>${f.farmer_id}</td><td>${f.name}</td><td>${f.phone||'-'}</td><td>${f.village||'-'}</td>
+      <td>${new Date(f.created_at).toLocaleDateString()}</td>
+      <td>
+        <button class="btn-sm btn-edit" onclick="editFarmer(${f.farmer_id},'${f.name}','${f.phone||''}','${f.village||''}')">Edit</button>
+        <button class="btn-sm btn-del" onclick="deleteFarmer(${f.farmer_id})">Delete</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#999">No farmers yet.</td></tr>';
 }
 async function addFarmer() {
-    const body = { name: document.getElementById('f-name').value, phone: document.getElementById('f-phone').value, village: document.getElementById('f-village').value };
-    if(!body.name) return alert('Please enter farmer name!');
-    await fetch(`${API}/farmers`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    loadFarmers(); loadDashboard();
+  const name=document.getElementById('f-name').value.trim();
+  if(!name) return toast('Please enter farmer name!','error');
+  const body = { name, phone:document.getElementById('f-phone').value, village:document.getElementById('f-village').value,
+    username:document.getElementById('f-uname').value, password:document.getElementById('f-upass').value };
+  await fetch(`${API}/farmers`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  ['f-name','f-phone','f-village','f-uname','f-upass'].forEach(id=>document.getElementById(id).value='');
+  toast('Farmer added successfully!'); loadFarmers(); loadDashboard();
+}
+function editFarmer(id,name,phone,village) {
+  editContext = { type:'farmer', id };
+  document.getElementById('modal-title').textContent = 'Edit Farmer';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-grid">
+      <div><label>Name</label><input id="e-name" value="${name}"></div>
+      <div><label>Phone</label><input id="e-phone" value="${phone}"></div>
+      <div><label>Village</label><input id="e-village" value="${village}"></div>
+    </div>`;
+  document.getElementById('edit-modal').classList.add('show');
+}
+async function deleteFarmer(id) {
+  if(!confirm('Delete this farmer? This will also delete all their fields and data.')) return;
+  await fetch(`${API}/farmers/${id}`,{method:'DELETE'});
+  toast('Farmer deleted!'); loadFarmers(); loadDashboard();
 }
 
-// ---- FIELDS ----
+// ========== FIELDS ==========
 async function loadFields() {
-    const data = await fetch(`${API}/fields`).then(r=>r.json());
-    document.getElementById('fields-table').innerHTML = data.map(f => `
-        <tr><td>${f.field_id}</td><td>${f.farmer_name}</td><td>${f.field_name}</td><td>${f.area_acres} ac</td><td>${f.soil_type}</td><td>${f.location}</td></tr>`).join('') || '<tr><td colspan="6">No fields yet.</td></tr>';
+  const data = await fetch(`${API}/fields`).then(r=>r.json());
+  document.getElementById('fields-table').innerHTML = data.map(f => `
+    <tr>
+      <td>${f.field_id}</td><td>${f.farmer_name}</td><td>${f.field_name}</td>
+      <td>${f.area_acres} ac</td><td>${f.soil_type}</td><td>${f.location||'-'}</td>
+      <td>
+        <button class="btn-sm btn-edit" onclick="editField(${f.field_id},'${f.field_name}',${f.area_acres},'${f.soil_type}','${f.location||''}')">Edit</button>
+        <button class="btn-sm btn-del" onclick="deleteField(${f.field_id})">Delete</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No fields yet.</td></tr>';
 }
 async function addField() {
-    const body = { farmer_id: document.getElementById('fi-farmer').value, field_name: document.getElementById('fi-name').value, area_acres: document.getElementById('fi-area').value, soil_type: document.getElementById('fi-soil').value, location: document.getElementById('fi-location').value };
-    await fetch(`${API}/fields`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    loadFields(); loadDashboard();
+  const body = { farmer_id:document.getElementById('fi-farmer').value, field_name:document.getElementById('fi-name').value,
+    area_acres:document.getElementById('fi-area').value, soil_type:document.getElementById('fi-soil').value,
+    location:document.getElementById('fi-location').value };
+  if(!body.field_name) return toast('Please enter field name!','error');
+  await fetch(`${API}/fields`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  toast('Field added!'); loadFields(); loadDashboard();
+}
+function editField(id,name,area,soil,loc) {
+  editContext = { type:'field', id };
+  document.getElementById('modal-title').textContent = 'Edit Field';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-grid">
+      <div><label>Field Name</label><input id="e-fname" value="${name}"></div>
+      <div><label>Area (Acres)</label><input id="e-area" type="number" value="${area}"></div>
+      <div><label>Soil Type</label><select id="e-soil"><option ${soil==='Clay'?'selected':''}>Clay</option><option ${soil==='Sandy'?'selected':''}>Sandy</option><option ${soil==='Loamy'?'selected':''}>Loamy</option><option ${soil==='Silt'?'selected':''}>Silt</option><option ${soil==='Black'?'selected':''}>Black</option></select></div>
+      <div><label>Location</label><input id="e-loc" value="${loc}"></div>
+    </div>`;
+  document.getElementById('edit-modal').classList.add('show');
+}
+async function deleteField(id) {
+  if(!confirm('Delete this field?')) return;
+  await fetch(`${API}/fields/${id}`,{method:'DELETE'});
+  toast('Field deleted!'); loadFields(); loadDashboard();
 }
 
-// ---- CROPS ----
+// ========== CROPS ==========
 async function loadCrops() {
-    const data = await fetch(`${API}/crops`).then(r=>r.json());
-    document.getElementById('crops-table').innerHTML = data.map(c => `
-        <tr><td>${c.crop_id}</td><td>${c.field_name}</td><td>${c.crop_name}</td><td>${c.sowing_date?.split('T')[0]}</td><td>${c.harvest_date?.split('T')[0]}</td><td>${c.water_requirement_liters}</td></tr>`).join('') || '<tr><td colspan="6">No crops yet.</td></tr>';
+  const data = await fetch(`${API}/crops`).then(r=>r.json());
+  document.getElementById('crops-table').innerHTML = data.map(c => `
+    <tr>
+      <td>${c.crop_id}</td><td>${c.field_name}</td><td>${c.crop_name}</td>
+      <td>${c.sowing_date?.split('T')[0]||'-'}</td><td>${c.harvest_date?.split('T')[0]||'-'}</td>
+      <td>${c.water_requirement_liters}</td>
+      <td>
+        <button class="btn-sm btn-edit" onclick="editCrop(${c.crop_id},'${c.crop_name}','${c.sowing_date?.split('T')[0]}','${c.harvest_date?.split('T')[0]}',${c.water_requirement_liters})">Edit</button>
+        <button class="btn-sm btn-del" onclick="deleteCrop(${c.crop_id})">Delete</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No crops yet.</td></tr>';
 }
 async function addCrop() {
-    const body = { field_id: document.getElementById('cr-field').value, crop_name: document.getElementById('cr-name').value, sowing_date: document.getElementById('cr-sow').value, harvest_date: document.getElementById('cr-harvest').value, water_requirement_liters: document.getElementById('cr-water').value };
-    await fetch(`${API}/crops`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    loadCrops(); loadDashboard();
+  const body = { field_id:document.getElementById('cr-field').value, crop_name:document.getElementById('cr-name').value,
+    sowing_date:document.getElementById('cr-sow').value, harvest_date:document.getElementById('cr-harvest').value,
+    water_requirement_liters:document.getElementById('cr-water').value };
+  if(!body.crop_name) return toast('Please enter crop name!','error');
+  await fetch(`${API}/crops`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  toast('Crop added!'); loadCrops(); loadDashboard();
+}
+function editCrop(id,name,sow,harvest,water) {
+  editContext = { type:'crop', id };
+  document.getElementById('modal-title').textContent = 'Edit Crop';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-grid">
+      <div><label>Crop Name</label><input id="e-cname" value="${name}"></div>
+      <div><label>Sowing Date</label><input id="e-sow" type="date" value="${sow}"></div>
+      <div><label>Harvest Date</label><input id="e-harvest" type="date" value="${harvest}"></div>
+      <div><label>Water Req (L)</label><input id="e-cwater" type="number" value="${water}"></div>
+    </div>`;
+  document.getElementById('edit-modal').classList.add('show');
+}
+async function deleteCrop(id) {
+  if(!confirm('Delete this crop?')) return;
+  await fetch(`${API}/crops/${id}`,{method:'DELETE'});
+  toast('Crop deleted!'); loadCrops(); loadDashboard();
 }
 
-// ---- IRRIGATION ----
+// ========== IRRIGATION ==========
 async function loadIrrigation() {
-    const data = await fetch(`${API}/irrigation`).then(r=>r.json());
-    document.getElementById('irrigation-table').innerHTML = data.map(i => `
-        <tr><td>${i.schedule_id}</td><td>${i.field_name}</td><td>${i.scheduled_date?.split('T')[0]}</td><td>${i.duration_minutes} min</td><td>${i.method}</td><td>${i.status}</td></tr>`).join('') || '<tr><td colspan="6">No schedules yet.</td></tr>';
+  const data = await fetch(`${API}/irrigation`).then(r=>r.json());
+  document.getElementById('irrigation-table').innerHTML = data.map(i => `
+    <tr>
+      <td>${i.schedule_id}</td><td>${i.field_name}</td>
+      <td>${i.scheduled_date?.split('T')[0]||'-'}</td><td>${i.duration_minutes} min</td>
+      <td>${i.method}</td><td><span class="badge ${i.status}">${i.status}</span></td>
+      <td>
+        <button class="btn-sm btn-status" onclick="updateIrrStatus(${i.schedule_id},'${i.status}')">Status</button>
+        <button class="btn-sm btn-del" onclick="deleteIrrigation(${i.schedule_id})">Delete</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No schedules yet.</td></tr>';
 }
 async function addIrrigation() {
-    const body = { field_id: document.getElementById('ir-field').value, scheduled_date: document.getElementById('ir-date').value, duration_minutes: document.getElementById('ir-duration').value, method: document.getElementById('ir-method').value };
-    await fetch(`${API}/irrigation`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    loadIrrigation();
+  const body = { field_id:document.getElementById('ir-field').value, scheduled_date:document.getElementById('ir-date').value,
+    duration_minutes:document.getElementById('ir-duration').value, method:document.getElementById('ir-method').value };
+  await fetch(`${API}/irrigation`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  toast('Irrigation scheduled!'); loadIrrigation();
+}
+function updateIrrStatus(id, current) {
+  editContext = { type:'irrigation', id };
+  document.getElementById('modal-title').textContent = 'Update Irrigation Status';
+  document.getElementById('modal-body').innerHTML = `
+    <div><label>Status</label>
+    <select id="e-status">
+      <option ${current==='Pending'?'selected':''}>Pending</option>
+      <option ${current==='Done'?'selected':''}>Done</option>
+      <option ${current==='Skipped'?'selected':''}>Skipped</option>
+    </select></div>`;
+  document.getElementById('edit-modal').classList.add('show');
+}
+async function deleteIrrigation(id) {
+  if(!confirm('Delete this schedule?')) return;
+  await fetch(`${API}/irrigation/${id}`,{method:'DELETE'});
+  toast('Schedule deleted!'); loadIrrigation();
 }
 
-// ---- WATER USAGE ----
+// ========== WATER USAGE ==========
 async function loadWaterUsage() {
-    const data = await fetch(`${API}/water-usage`).then(r=>r.json());
-    document.getElementById('water-table').innerHTML = data.map(w => `
-        <tr><td>${w.date_logged?.split('T')[0]}</td><td>${w.field_name}</td><td>${w.crop_name}</td><td>${w.water_used_liters}</td><td>${w.water_required_liters}</td>
-        <td><span class="badge ${w.status}">${w.status}</span></td></tr>`).join('') || '<tr><td colspan="6">No logs yet.</td></tr>';
+  const from = document.getElementById('date-from')?.value || '';
+  const to = document.getElementById('date-to')?.value || '';
+  let url = `${API}/water-usage`;
+  const params = [];
+  if(from) params.push(`from=${from}`);
+  if(to) params.push(`to=${to}`);
+  if(params.length) url += '?' + params.join('&');
+  const data = await fetch(url).then(r=>r.json());
+  document.getElementById('water-table').innerHTML = data.map(w => `
+    <tr>
+      <td>${w.date_logged?.split('T')[0]||'-'}</td><td>${w.field_name}</td>
+      <td>${w.crop_name}</td><td>${w.farmer_name}</td>
+      <td>${w.water_used_liters}</td><td>${w.water_required_liters}</td>
+      <td><span class="badge ${w.status}">${w.status}</span></td>
+      <td><button class="btn-sm btn-del" onclick="deleteWaterUsage(${w.usage_id})">Delete</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No logs yet.</td></tr>';
 }
 async function addWaterUsage() {
-    const body = { field_id: document.getElementById('wu-field').value, crop_id: document.getElementById('wu-crop').value, date_logged: document.getElementById('wu-date').value, water_used_liters: document.getElementById('wu-used').value, water_required_liters: document.getElementById('wu-required').value };
-    await fetch(`${API}/water-usage`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    loadWaterUsage(); loadDashboard();
+  const body = { field_id:document.getElementById('wu-field').value, crop_id:document.getElementById('wu-crop').value,
+    date_logged:document.getElementById('wu-date').value, water_used_liters:document.getElementById('wu-used').value,
+    water_required_liters:document.getElementById('wu-required').value };
+  if(!body.date_logged || !body.water_used_liters) return toast('Please fill all fields!','error');
+  await fetch(`${API}/water-usage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  toast('Water usage logged!'); loadWaterUsage(); loadDashboard();
+}
+async function deleteWaterUsage(id) {
+  if(!confirm('Delete this log?')) return;
+  await fetch(`${API}/water-usage/${id}`,{method:'DELETE'});
+  toast('Log deleted!'); loadWaterUsage(); loadDashboard();
+}
+function clearDateFilter() {
+  document.getElementById('date-from').value = '';
+  document.getElementById('date-to').value = '';
+  loadWaterUsage();
 }
 
-// ---- DROPDOWNS ----
+// ========== SUMMARY ==========
+async function loadSummary() {
+  const data = await fetch(`${API}/summary`).then(r=>r.json());
+  document.getElementById('summary-table').innerHTML = data.map(s => {
+    const pct = parseFloat(s.usage_percent);
+    const color = pct > 100 ? '#e74c3c' : pct < 80 ? '#f39c12' : '#2ecc71';
+    return `<tr>
+      <td><strong>${s.farmer_name}</strong></td>
+      <td>${s.village||'-'}</td>
+      <td>${s.total_fields}</td><td>${s.total_crops}</td>
+      <td>${s.total_water_used}</td><td>${s.total_water_required}</td>
+      <td>${s.total_rainwater_collected || 0}</td>
+      <td>
+        <div style="font-weight:bold;color:${color}">${pct}%</div>
+        <div class="summary-bar"><div class="summary-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+      </td>
+      <td><span class="badge Overuse">${s.overuse_count||0}</span></td>
+      <td><span class="badge Shortage">${s.shortage_count||0}</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="10" style="text-align:center;color:#999">No data yet.</td></tr>';
+
+  if(summaryChartInst) summaryChartInst.destroy();
+  summaryChartInst = new Chart(document.getElementById('summaryChart'), {
+    type: 'bar',
+    data: {
+      labels: data.map(s => s.farmer_name),
+      datasets: [
+        { label:'Total Used (L)', data:data.map(s=>s.total_water_used), backgroundColor:'rgba(46,204,113,0.7)', borderColor:'#1a6b3c', borderWidth:1 },
+        { label:'Total Required (L)', data:data.map(s=>s.total_water_required), backgroundColor:'rgba(52,152,219,0.7)', borderColor:'#2980b9', borderWidth:1 }
+      ]
+    },
+    options:{ responsive:true, plugins:{ legend:{ position:'top' } }, scales:{ y:{ beginAtZero:true } } }
+  });
+}
+
+// ========== DROPDOWNS ==========
 async function loadDropdowns() {
-    const farmers = await fetch(`${API}/farmers`).then(r=>r.json());
-    const fields = await fetch(`${API}/fields`).then(r=>r.json());
-    ['fi-farmer'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.innerHTML = farmers.map(f => `<option value="${f.farmer_id}">${f.name}</option>`).join('');
-    });
-    ['cr-field','ir-field','wu-field'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.innerHTML = fields.map(f => `<option value="${f.field_id}">${f.field_name}</option>`).join('');
-    });
-    // ✅ FIX: Auto-load crops for the first field on page load
-    await loadCropsForField();
+  const [farmers, fields] = await Promise.all([
+    fetch(`${API}/farmers`).then(r=>r.json()),
+    fetch(`${API}/fields`).then(r=>r.json())
+  ]);
+  ['fi-farmer'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = farmers.map(f=>`<option value="${f.farmer_id}">${f.name}</option>`).join('');
+  });
+  ['cr-field','ir-field','wu-field','rw-field','rw-calc-field','msg-field'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = fields.map(f=>`<option value="${f.field_id}">${f.field_name}</option>`).join('');
+  });
+  await loadCropsForField();
 }
 async function loadCropsForField() {
-    const crops = await fetch(`${API}/crops`).then(r=>r.json());
-    const wuField = document.getElementById('wu-field');
-    if (!wuField) return; // ✅ FIX: Skip if element doesn't exist yet
-    const fieldId = wuField.value;
-    const filtered = crops.filter(c => c.field_id == fieldId);
-    const cropDropdown = document.getElementById('wu-crop');
-    if (cropDropdown) {
-        cropDropdown.innerHTML = filtered.length
-            ? filtered.map(c => `<option value="${c.crop_id}">${c.crop_name}</option>`).join('')
-            : '<option value="">No crops for this field</option>';
+  const wuField = document.getElementById('wu-field');
+  if(!wuField) return;
+  const crops = await fetch(`${API}/crops`).then(r=>r.json());
+  const filtered = crops.filter(c => c.field_id == wuField.value);
+  const el = document.getElementById('wu-crop');
+  if(el) el.innerHTML = filtered.length
+    ? filtered.map(c=>`<option value="${c.crop_id}">${c.crop_name}</option>`).join('')
+    : '<option value="">No crops for this field</option>';
+}
+
+// ========== RAINWATER FUNCTIONS ==========
+async function loadRainwater() {
+  const data = await fetch(`${API}/rainwater`).then(r=>r.json()).catch(()=>[]);
+  document.getElementById('rainwater-table').innerHTML = data.map(r => `
+    <tr>
+      <td>${r.date_event?.split('T')[0]||'-'}</td><td>${r.field_name}</td>
+      <td>${r.rain_speed_ml_per_min}</td><td>${r.duration_min}</td>
+      <td>${(r.collected_liters || 0).toFixed(2)}</td><td>${r.notes||'-'}</td>
+      <td>
+        <button class="btn-sm btn-edit" onclick="editRainwater(${r.event_id},'${r.date_event?.split('T')[0]}',${r.rain_speed_ml_per_min},${r.duration_min},'${r.notes||''}')">Edit</button>
+        <button class="btn-sm btn-del" onclick="deleteRainwater(${r.event_id})">Delete</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No rainwater events yet.</td></tr>';
+}
+
+function calculateCollected() {
+  const speed = parseFloat(document.getElementById('rw-speed').value) || 0;
+  const duration = parseFloat(document.getElementById('rw-duration').value) || 0;
+  const collected = (speed * duration) / 1000;
+  document.getElementById('rw-collected').value = collected.toFixed(2);
+}
+
+async function addRainwaterEvent() {
+  const field_id = document.getElementById('rw-field').value;
+  const date_event = document.getElementById('rw-date').value;
+  const rain_speed_ml_per_min = parseFloat(document.getElementById('rw-speed').value);
+  const duration_min = parseInt(document.getElementById('rw-duration').value);
+  const notes = document.getElementById('rw-notes').value;
+  
+  if(!field_id || !date_event || !rain_speed_ml_per_min || !duration_min) return toast('Please fill all required fields!','error');
+  
+  const body = { field_id, date_event, rain_speed_ml_per_min, duration_min, notes };
+  await fetch(`${API}/rainwater`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  
+  ['rw-field','rw-date','rw-speed','rw-duration','rw-collected','rw-notes'].forEach(id=>document.getElementById(id).value='');
+  toast('Rainwater event logged!'); 
+  loadRainwater(); 
+  loadDashboard();
+}
+
+function editRainwater(id,date,speed,duration,notes) {
+  editContext = { type:'rainwater', id };
+  document.getElementById('modal-title').textContent = 'Edit Rainwater Event';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-grid">
+      <div><label>Date</label><input id="e-rw-date" type="date" value="${date}"></div>
+      <div><label>Rain Speed (ml/min)</label><input id="e-rw-speed" type="number" step="0.1" value="${speed}"></div>
+      <div><label>Duration (min)</label><input id="e-rw-duration" type="number" value="${duration}"></div>
+      <div style="grid-column: 1 / -1;"><label>Notes</label><textarea id="e-rw-notes" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">${notes}</textarea></div>
+    </div>`;
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+async function deleteRainwater(id) {
+  if(!confirm('Delete this rainwater event?')) return;
+  await fetch(`${API}/rainwater/${id}`,{method:'DELETE'});
+  toast('Event deleted!'); loadRainwater(); loadDashboard();
+}
+
+async function calculateReserveStats() {
+  const fieldId = document.getElementById('rw-calc-field').value;
+  if(!fieldId) return;
+  try {
+    const calc = await fetch(`${API}/rainwater/calculate/${fieldId}`).then(r=>r.json());
+    document.getElementById('stat-collected').textContent = calc.collected.toFixed(0);
+    document.getElementById('stat-reserve-pct').textContent = calc.percent_filled.toFixed(1) + '%';
+    document.getElementById('stat-reserve-days').textContent = calc.reserve_days;
+    document.getElementById('stat-avg-rain').textContent = calc.avg_rainfall.toFixed(2);
+    document.getElementById('stat-avg-usage').textContent = calc.avg_daily_usage.toFixed(0);
+    
+    // Draw rain collection chart
+    const rainData = await fetch(`${API}/rainwater`).then(r=>r.json()).catch(()=>[]);
+    const fieldRain = rainData.filter(r => r.field_id == fieldId).sort((a,b) => new Date(a.date_event) - new Date(b.date_event));
+    
+    if(fieldRain.length > 0 && document.getElementById('rainChart')) {
+      if(window.rainChartInst) window.rainChartInst.destroy();
+      window.rainChartInst = new Chart(document.getElementById('rainChart'), {
+        type: 'line',
+        data: {
+          labels: fieldRain.map(r => r.date_event?.split('T')[0]),
+          datasets: [{ label:'Collected (L)', data:fieldRain.map(r=>r.collected_liters), borderColor:'#3498db', backgroundColor:'rgba(52,183,235,0.1)', tension:0.3, fill:true }]
+        },
+        options: { responsive:true, plugins:{ legend:{ position:'top' } } }
+      });
     }
+    
+    // Draw reserve projection chart
+    if(document.getElementById('reserveChart')) {
+      if(window.reserveChartInst) window.reserveChartInst.destroy();
+      const projDays = Array.from({length:10}, (_, i) => i + 1);
+      const projReserve = projDays.map(day => Math.max(0, calc.collected - (calc.avg_daily_usage * day)));
+      window.reserveChartInst = new Chart(document.getElementById('reserveChart'), {
+        type: 'line',
+        data: {
+          labels: projDays.map(d => `Day ${d}`),
+          datasets: [{ label:'Projected Reserve (L)', data:projReserve, borderColor:'#27ae60', backgroundColor:'rgba(39,174,96,0.1)', tension:0.3, fill:true }]
+        },
+        options: { responsive:true, plugins:{ legend:{ position:'top' } } }
+      });
+    }
+  } catch(e) { console.error('Error calculating stats:', e); }
+}
+
+// ========== MESSAGING FUNCTIONS ==========
+let messageLog = [];
+
+async function sendMessage() {
+  const fieldId = document.getElementById('msg-field').value;
+  const messageType = document.getElementById('msg-type').value;
+  const message = document.getElementById('msg-text').value.trim();
+  
+  if(!fieldId || !message) return toast('Please fill all fields!','error');
+  
+  try {
+    const res = await fetch(`${API}/message/${fieldId}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ message_type: messageType, message })
+    });
+    const data = await res.json();
+    
+    if(res.ok) {
+      messageLog.unshift({type: messageType, time: new Date().toLocaleString(), message, status: 'Sent'});
+      document.getElementById('msg-field').value = '';
+      document.getElementById('msg-text').value = '';
+      renderMessageLog();
+      toast('✅ Alert sent successfully!');
+    } else {
+      toast('Error sending alert','error');
+    }
+  } catch(e) {
+    console.error('Message error:', e);
+    toast('Error sending alert','error');
+  }
+}
+
+function renderMessageLog() {
+  const container = document.getElementById('messages-log');
+  if(messageLog.length === 0) {
+    container.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">No alerts sent yet.</p>';
+  } else {
+    container.innerHTML = messageLog.map((msg, idx) => `
+      <div style="padding:12px;border-left:4px solid ${msg.type==='flood'?'#3498db':msg.type==='calamity'?'#e74c3c':'#f39c12'};margin-bottom:10px;background:#f9f9f9;border-radius:4px;">
+        <div style="font-weight:bold;margin-bottom:4px;">
+          ${msg.type==='flood'?'⚠️ Flood':msg.type==='calamity'?'🌪️ Calamity':'🏜️ Drought'} - <span style="color:#27ae60;">${msg.status}</span>
+        </div>
+        <div style="font-size:12px;color:#666;margin-bottom:4px;">${msg.time}</div>
+        <div style="font-size:13px;">${msg.message}</div>
+      </div>`).join('');
+  }
+}
+
+// ========== MODAL SAVE ==========
+async function saveEdit() {
+  const { type, id } =editContext;
+  let body = {}, url = '';
+  if(type === 'farmer') {
+    body = { name:document.getElementById('e-name').value, phone:document.getElementById('e-phone').value, village:document.getElementById('e-village').value };
+    url = `${API}/farmers/${id}`;
+  } else if(type === 'field') {
+    body = { field_name:document.getElementById('e-fname').value, area_acres:document.getElementById('e-area').value, soil_type:document.getElementById('e-soil').value, location:document.getElementById('e-loc').value };
+    url = `${API}/fields/${id}`;
+  } else if(type === 'crop') {
+    body = { crop_name:document.getElementById('e-cname').value, sowing_date:document.getElementById('e-sow').value, harvest_date:document.getElementById('e-harvest').value, water_requirement_liters:document.getElementById('e-cwater').value };
+    url = `${API}/crops/${id}`;
+  } else if(type === 'irrigation') {
+    body = { status:document.getElementById('e-status').value };
+    url = `${API}/irrigation/${id}`;
+  } else if(type === 'rainwater') {
+    body = { rain_speed_ml_per_min:parseFloat(document.getElementById('e-rw-speed').value), duration_min:parseInt(document.getElementById('e-rw-duration').value), notes:document.getElementById('e-rw-notes').value };
+    url = `${API}/rainwater/${id}`;
+  }
+  await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  closeModal(); toast('Updated successfully!');
+  if(type==='farmer') loadFarmers();
+  else if(type==='field') loadFields();
+  else if(type==='crop') loadCrops();
+  else if(type==='irrigation') loadIrrigation();
+  else if(type==='rainwater') loadRainwater();
+}
+function closeModal() { document.getElementById('edit-modal').classList.remove('show'); }
+document.getElementById('edit-modal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+
+// ========== SEARCH / FILTER ==========
+function filterTable(tableId, query, cols) {
+  const rows = document.querySelectorAll(`#${tableId} tr`);
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    const match = !query || cols.some(i => cells[i]?.textContent.toLowerCase().includes(query.toLowerCase()));
+    row.style.display = match ? '' : 'none';
+  });
 }
 </script>
 </body>
