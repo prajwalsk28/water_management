@@ -24,6 +24,7 @@ USE water_mgmt;
 -- Order matters — child tables first due to foreign keys
 -- ----------------------------------------------------------------
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS water_usage;
 DROP TABLE IF EXISTS irrigation_schedule;
 DROP TABLE IF EXISTS crops;
@@ -69,6 +70,7 @@ CREATE TABLE fields (
     area_acres  DECIMAL(6,2),
     soil_type   VARCHAR(50),
     location    VARCHAR(100),
+    reservoir_capacity_liters DECIMAL(10,2) DEFAULT 100000,
     FOREIGN KEY (farmer_id) REFERENCES farmers(farmer_id) ON DELETE CASCADE
 );
 
@@ -113,6 +115,24 @@ CREATE TABLE water_usage (
     water_required_liters  DECIMAL(10,2),
     FOREIGN KEY (field_id) REFERENCES fields(field_id) ON DELETE CASCADE,
     FOREIGN KEY (crop_id)  REFERENCES crops(crop_id)  ON DELETE CASCADE
+);
+
+-- ----------------------------------------------------------------
+-- TABLE 7: notifications
+-- Stores portal alerts and emergency notifications
+-- ----------------------------------------------------------------
+CREATE TABLE notifications (
+    notification_id    INT AUTO_INCREMENT PRIMARY KEY,
+    field_id           INT NOT NULL,
+    farmer_id          INT NOT NULL,
+    type               VARCHAR(50),
+    title              VARCHAR(150),
+    message            TEXT,
+    severity           VARCHAR(20) DEFAULT 'info',
+    is_read            TINYINT(1) DEFAULT 0,
+    created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (field_id) REFERENCES fields(field_id) ON DELETE CASCADE,
+    FOREIGN KEY (farmer_id) REFERENCES farmers(farmer_id) ON DELETE CASCADE
 );
 
 -- ================================================================
@@ -185,6 +205,10 @@ INSERT INTO water_usage (field_id, crop_id, date_logged, water_used_liters, wate
 (4, 4, '2026-03-27', 5900,  6000),   -- Normal
 (5, 5, '2026-03-29', 4100,  4000);   -- Overuse
 
+INSERT INTO notifications (field_id, farmer_id, type, title, message, severity) VALUES
+(1, 1, 'rain', 'Rain recorded', 'North Farm collected 12.5L of rainwater.', 'info'),
+(2, 2, 'flood', 'Flood warning', 'River Side Field experienced heavy rain; check nearby drains.', 'warning');
+
 -- ================================================================
 -- VERIFICATION QUERIES
 -- Run these to confirm everything was created correctly
@@ -204,7 +228,9 @@ SELECT 'crops',                              COUNT(*) FROM crops
 UNION ALL
 SELECT 'irrigation_schedule',                COUNT(*) FROM irrigation_schedule
 UNION ALL
-SELECT 'water_usage',                        COUNT(*) FROM water_usage;
+SELECT 'water_usage',                        COUNT(*) FROM water_usage
+UNION ALL
+SELECT 'notifications',                      COUNT(*) FROM notifications;
 
 -- Show water usage with alert status (key query)
 SELECT

@@ -141,6 +141,7 @@ canvas{max-height:260px;}
   <button onclick="showPage('water',this)">💦 Water Usage</button>
   <button onclick="showPage('rainwater',this)">🌧️ Rain Harvesting</button>
   <button onclick="showPage('messages',this)">📱 Messages</button>
+  <button onclick="showPage('notifications',this)">🔔 Notifications</button>
   <button onclick="showPage('summary',this)">📈 Summary</button>
 </div>
 
@@ -153,6 +154,7 @@ canvas{max-height:260px;}
     <div class="stat-box"><div class="number" id="cnt-fields">-</div><div class="label">Fields</div></div>
     <div class="stat-box"><div class="number" id="cnt-crops">-</div><div class="label">Crops</div></div>
     <div class="stat-box"><div class="number" id="cnt-alerts">-</div><div class="label">Active Alerts</div></div>
+    <div class="stat-box" style="border-top-color:#f39c12;"><div class="number" id="cnt-notifications">-</div><div class="label">Unread Alerts</div></div>
     <div class="stat-box" style="border-top-color:#3498db;"><div class="number" id="cnt-rainwater">-</div><div class="label">Total Rainwater (L)</div></div>
     <div class="stat-box" style="border-top-color:#9b59b6;"><div class="number" id="cnt-rain-events">-</div><div class="label">Rain Events</div></div>
   </div>
@@ -197,6 +199,7 @@ canvas{max-height:260px;}
       <div><label>Area (Acres)</label><input id="fi-area" type="number" placeholder="e.g. 2.5"></div>
       <div><label>Soil Type</label><select id="fi-soil"><option>Clay</option><option>Sandy</option><option>Loamy</option><option>Silt</option><option>Black</option></select></div>
       <div><label>Location</label><input id="fi-location" placeholder="e.g. East Block"></div>
+      <div><label>Reservoir Capacity (L)</label><input id="fi-capacity" type="number" placeholder="e.g. 100000"></div>
     </div>
     <button class="btn" onclick="addField()">Add Field</button>
   </div>
@@ -206,7 +209,7 @@ canvas{max-height:260px;}
       <input id="search-fields" placeholder="🔍 Search by field name or farmer..." oninput="filterTable('fields-table',this.value,[1,2])">
       <select onchange="filterTable('fields-table',this.value,[4])"><option value="">All Soil Types</option><option>Clay</option><option>Sandy</option><option>Loamy</option><option>Silt</option><option>Black</option></select>
     </div>
-    <table><thead><tr><th>ID</th><th>Farmer</th><th>Field Name</th><th>Area</th><th>Soil</th><th>Location</th><th>Actions</th></tr></thead>
+    <table><thead><tr><th>ID</th><th>Farmer</th><th>Field Name</th><th>Area</th><th>Soil</th><th>Location</th><th>Reservoir Capacity</th><th>Actions</th></tr></thead>
     <tbody id="fields-table"></tbody></table>
   </div>
 </div>
@@ -318,6 +321,10 @@ canvas{max-height:260px;}
       <div class="stat-box"><div class="number" id="stat-avg-rain">-</div><div class="label">Avg Rainfall (ml/min)</div></div>
       <div class="stat-box"><div class="number" id="stat-avg-usage">-</div><div class="label">Avg Daily Usage (L)</div></div>
     </div>
+    <div class="card" style="margin-top:12px;">
+      <h2>💡 Reservoir Recommendation</h2>
+      <p id="reserve-recommendation" style="line-height:1.6;color:#444;">Select a field to see water-saving advice, reservoir status and how many days of supply are available.</p>
+    </div>
     <div class="chart-grid" style="margin-top:18px;">
       <div class="chart-box"><h3>🌧️ Rainwater Collection Over Time</h3><canvas id="rainChart"></canvas></div>
       <div class="chart-box"><h3>📊 Reserve Projection</h3><canvas id="reserveChart"></canvas></div>
@@ -339,6 +346,15 @@ canvas{max-height:260px;}
   <div class="card">
     <h2>📋 Alert History</h2>
     <div id="messages-log" style="max-height:400px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div id="notifications" class="page">
+  <div class="card">
+    <h2>🔔 Notifications</h2>
+    <p style="margin-bottom:12px;color:#666;font-size:13px;">This portal shows auto-generated alerts for rain, floods, reservoir status and manual messages sent from the field.</p>
+    <div id="notifications-list" style="max-height:520px;overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -417,10 +433,11 @@ function showPage(page, btn) {
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(page).classList.add('active');
   if(btn) btn.classList.add('active');
-  if(['fields','crops','irrigation','water','rainwater','messages'].includes(page)) loadDropdowns();
+  if(['fields','crops','irrigation','water','rainwater','messages','notifications'].includes(page)) loadDropdowns();
   if(page === 'summary') loadSummary();
   if(page === 'rainwater') { loadRainwater(); loadDashboard(); }
   if(page === 'messages') renderMessageLog();
+  if(page === 'notifications') loadNotifications();
 }
 
 // ========== TOAST ==========
@@ -433,21 +450,23 @@ function toast(msg, type='success') {
 }
 
 // ========== LOAD ALL ==========
-function loadAll() { loadFarmers(); loadFields(); loadCrops(); loadIrrigation(); loadWaterUsage(); loadRainwater(); loadDashboard(); }
+function loadAll() { loadFarmers(); loadFields(); loadCrops(); loadIrrigation(); loadWaterUsage(); loadRainwater(); loadDashboard(); loadNotifications(); }
 
 // ========== DASHBOARD ==========
 async function loadDashboard() {
-  const [farmers, fields, crops, water, chart, rainwater] = await Promise.all([
+  const [farmers, fields, crops, water, chart, rainwater, notifications] = await Promise.all([
     fetch(`${API}/farmers`).then(r=>r.json()),
     fetch(`${API}/fields`).then(r=>r.json()),
     fetch(`${API}/crops`).then(r=>r.json()),
     fetch(`${API}/water-usage`).then(r=>r.json()),
     fetch(`${API}/chart-data`).then(r=>r.json()),
-    fetch(`${API}/rainwater`).then(r=>r.json()).catch(()=>[])
+    fetch(`${API}/rainwater`).then(r=>r.json()).catch(()=>[]),
+    fetch(`${API}/notifications?unread=1`).then(r=>r.json()).catch(()=>[])
   ]);
   document.getElementById('cnt-farmers').textContent = farmers.length;
   document.getElementById('cnt-fields').textContent = fields.length;
   document.getElementById('cnt-crops').textContent = crops.length;
+  document.getElementById('cnt-notifications').textContent = notifications.length;
   const alerts = water.filter(w => w.status !== 'Normal');
   document.getElementById('cnt-alerts').textContent = alerts.length;
   
@@ -556,22 +575,22 @@ async function loadFields() {
   document.getElementById('fields-table').innerHTML = data.map(f => `
     <tr>
       <td>${f.field_id}</td><td>${f.farmer_name}</td><td>${f.field_name}</td>
-      <td>${f.area_acres} ac</td><td>${f.soil_type}</td><td>${f.location||'-'}</td>
+      <td>${f.area_acres} ac</td><td>${f.soil_type}</td><td>${f.location||'-'}</td><td>${f.reservoir_capacity_liters||100000} L</td>
       <td>
-        <button class="btn-sm btn-edit" onclick="editField(${f.field_id},'${f.field_name}',${f.area_acres},'${f.soil_type}','${f.location||''}')">Edit</button>
+        <button class="btn-sm btn-edit" onclick="editField(${f.field_id},'${f.field_name}',${f.area_acres},'${f.soil_type}','${f.location||''}',${f.reservoir_capacity_liters||100000})">Edit</button>
         <button class="btn-sm btn-del" onclick="deleteField(${f.field_id})">Delete</button>
       </td>
-    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No fields yet.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No fields yet.</td></tr>';
 }
 async function addField() {
   const body = { farmer_id:document.getElementById('fi-farmer').value, field_name:document.getElementById('fi-name').value,
     area_acres:document.getElementById('fi-area').value, soil_type:document.getElementById('fi-soil').value,
-    location:document.getElementById('fi-location').value };
+    location:document.getElementById('fi-location').value, reservoir_capacity_liters: document.getElementById('fi-capacity').value };
   if(!body.field_name) return toast('Please enter field name!','error');
   await fetch(`${API}/fields`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   toast('Field added!'); loadFields(); loadDashboard();
 }
-function editField(id,name,area,soil,loc) {
+function editField(id,name,area,soil,loc,capacity) {
   editContext = { type:'field', id };
   document.getElementById('modal-title').textContent = 'Edit Field';
   document.getElementById('modal-body').innerHTML = `
@@ -580,6 +599,7 @@ function editField(id,name,area,soil,loc) {
       <div><label>Area (Acres)</label><input id="e-area" type="number" value="${area}"></div>
       <div><label>Soil Type</label><select id="e-soil"><option ${soil==='Clay'?'selected':''}>Clay</option><option ${soil==='Sandy'?'selected':''}>Sandy</option><option ${soil==='Loamy'?'selected':''}>Loamy</option><option ${soil==='Silt'?'selected':''}>Silt</option><option ${soil==='Black'?'selected':''}>Black</option></select></div>
       <div><label>Location</label><input id="e-loc" value="${loc}"></div>
+      <div><label>Reservoir Capacity (L)</label><input id="e-capacity" type="number" value="${capacity||100000}"></div>
     </div>`;
   document.getElementById('edit-modal').classList.add('show');
 }
@@ -836,6 +856,7 @@ async function calculateReserveStats() {
     document.getElementById('stat-reserve-days').textContent = calc.reserve_days;
     document.getElementById('stat-avg-rain').textContent = calc.avg_rainfall.toFixed(2);
     document.getElementById('stat-avg-usage').textContent = calc.avg_daily_usage.toFixed(0);
+    document.getElementById('reserve-recommendation').textContent = calc.recommendation || 'Select a field to see water-saving advice, reservoir status and how many days of supply are available.';
     
     // Draw rain collection chart
     const rainData = await fetch(`${API}/rainwater`).then(r=>r.json()).catch(()=>[]);
@@ -919,6 +940,31 @@ function renderMessageLog() {
   }
 }
 
+async function loadNotifications() {
+  const data = await fetch(`${API}/notifications`).then(r=>r.json()).catch(()=>[]);
+  const container = document.getElementById('notifications-list');
+  if(!container) return;
+  if(data.length === 0) {
+    container.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">No notifications yet.</p>';
+    return;
+  }
+  container.innerHTML = data.map(n => `
+    <div style="padding:14px;border-radius:10px;margin-bottom:12px;background:${n.is_read ? '#f4f4f4' : '#fcfbef'};border:1px solid ${n.is_read ? '#e0e0e0' : '#f1c40f'};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="font-weight:bold;">${n.title}</div>
+        <button class="btn-sm btn-outline" onclick="markNotificationRead(${n.notification_id})">${n.is_read ? 'Read' : 'Mark Read'}</button>
+      </div>
+      <div style="font-size:12px;color:#666;margin-bottom:8px;">Field: ${n.field_name} • Farmer: ${n.farmer_name} • ${new Date(n.created_at).toLocaleString()}</div>
+      <div style="font-size:13px;color:#333;">${n.message}</div>
+    </div>`).join('');
+}
+
+async function markNotificationRead(id) {
+  await fetch(`${API}/notifications/${id}/read`, { method:'PUT' });
+  loadNotifications();
+  loadDashboard();
+}
+
 // ========== MODAL SAVE ==========
 async function saveEdit() {
   const { type, id } =editContext;
@@ -927,7 +973,7 @@ async function saveEdit() {
     body = { name:document.getElementById('e-name').value, phone:document.getElementById('e-phone').value, village:document.getElementById('e-village').value };
     url = `${API}/farmers/${id}`;
   } else if(type === 'field') {
-    body = { field_name:document.getElementById('e-fname').value, area_acres:document.getElementById('e-area').value, soil_type:document.getElementById('e-soil').value, location:document.getElementById('e-loc').value };
+    body = { field_name:document.getElementById('e-fname').value, area_acres:document.getElementById('e-area').value, soil_type:document.getElementById('e-soil').value, location:document.getElementById('e-loc').value, reservoir_capacity_liters:document.getElementById('e-capacity').value };
     url = `${API}/fields/${id}`;
   } else if(type === 'crop') {
     body = { crop_name:document.getElementById('e-cname').value, sowing_date:document.getElementById('e-sow').value, harvest_date:document.getElementById('e-harvest').value, water_requirement_liters:document.getElementById('e-cwater').value };

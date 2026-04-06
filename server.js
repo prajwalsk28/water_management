@@ -35,6 +35,35 @@ db.connect((err) => {
         if (err) console.error('Table creation error:', err);
         else console.log('✅ rainwater_events table ready!');
     });
+
+    // Add reservoir capacity column if it doesn't exist
+    db.query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='fields' AND COLUMN_NAME='reservoir_capacity_liters'`, (err, result) => {
+        if (!result || result.length === 0) {
+            db.query(`ALTER TABLE fields ADD COLUMN reservoir_capacity_liters DECIMAL(10,2) DEFAULT 100000`, (err2) => {
+                if (err2) console.error('Field alter error:', err2);
+                else console.log('✅ fields reservoir_capacity_liters added!');
+            });
+        } else {
+            console.log('✅ fields reservoir_capacity_liters already exists!');
+        }
+    });
+
+    db.query(`CREATE TABLE IF NOT EXISTS notifications (
+        notification_id INT PRIMARY KEY AUTO_INCREMENT,
+        field_id INT NOT NULL,
+        farmer_id INT NOT NULL,
+        type VARCHAR(50),
+        title VARCHAR(150),
+        message TEXT,
+        severity VARCHAR(20) DEFAULT 'info',
+        is_read TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (field_id) REFERENCES fields(field_id) ON DELETE CASCADE,
+        FOREIGN KEY (farmer_id) REFERENCES farmers(farmer_id) ON DELETE CASCADE
+    )`, (err) => {
+        if (err) console.error('Notifications table error:', err);
+        else console.log('✅ notifications table ready!');
+    });
 });
 
 // ==================== LOGIN ====================
@@ -96,17 +125,17 @@ app.get('/api/fields', (req, res) => {
         });
 });
 app.post('/api/fields', (req, res) => {
-    const { farmer_id, field_name, area_acres, soil_type, location } = req.body;
-    db.query('INSERT INTO fields (farmer_id, field_name, area_acres, soil_type, location) VALUES (?,?,?,?,?)',
-        [farmer_id, field_name, area_acres, soil_type, location], (err, result) => {
+    const { farmer_id, field_name, area_acres, soil_type, location, reservoir_capacity_liters } = req.body;
+    db.query('INSERT INTO fields (farmer_id, field_name, area_acres, soil_type, location, reservoir_capacity_liters) VALUES (?,?,?,?,?,?)',
+        [farmer_id, field_name, area_acres, soil_type, location, reservoir_capacity_liters || 100000], (err, result) => {
             if (err) return res.status(500).json({ error: err });
             res.json({ message: 'Field added!', id: result.insertId });
         });
 });
 app.put('/api/fields/:id', (req, res) => {
-    const { field_name, area_acres, soil_type, location } = req.body;
-    db.query('UPDATE fields SET field_name=?, area_acres=?, soil_type=?, location=? WHERE field_id=?',
-        [field_name, area_acres, soil_type, location, req.params.id], (err) => {
+    const { field_name, area_acres, soil_type, location, reservoir_capacity_liters } = req.body;
+    db.query('UPDATE fields SET field_name=?, area_acres=?, soil_type=?, location=?, reservoir_capacity_liters=? WHERE field_id=?',
+        [field_name, area_acres, soil_type, location, reservoir_capacity_liters || 100000, req.params.id], (err) => {
             if (err) return res.status(500).json({ error: err });
             res.json({ message: 'Field updated!' });
         });
@@ -228,14 +257,53 @@ app.get('/api/rainwater', (req, res) => {
     });
 });
 
+function createNotification(field_id, farmer_id, type, title, message, severity = 'info') {
+    return new Promise((resolve, reject) => {
+        db.query('INSERT INTO notifications (field_id, farmer_id, type, title, message, severity) VALUES (?,?,?,?,?,?)',
+            [field_id, farmer_id, type, title, message, severity], (err, result) => {
+                if (err) return reject(err);
+                resolve(result.insertId);
+            });
+    });
+}
+
 app.post('/api/rainwater', (req, res) => {
     const { field_id, date_event, rain_speed_ml_per_min, duration_min, notes } = req.body;
     const collected_liters = (rain_speed_ml_per_min * duration_min) / 1000;
-    db.query('INSERT INTO rainwater_events (field_id, date_event, rain_speed_ml_per_min, duration_min, collected_liters, notes) VALUES (?,?,?,?,?,?)',
-        [field_id, date_event, rain_speed_ml_per_min, duration_min, collected_liters, notes], (err, result) => {
-            if (err) return res.status(500).json({ error: err });
-            res.json({ message: 'Rainwater event logged!', id: result.insertId, collected_liters });
-        });
+
+    db.query('SELECT f.reservoir_capacity_liters, f.field_name, fa.name as farmer_name, fa.farmer_id FROM fields f JOIN farmers fa ON f.farmer_id = fa.farmer_id WHERE f.field_id = ?', [field_id], async (err, rows) => {
+        if (err) return res.status(500).json({ error: err });
+        if (!rows.length) return res.status(400).json({ error: 'Field not found' });
+
+        const field = rows[0];
+        const capacity = field.reservoir_capacity_liters || 100000;
+
+        db.query('INSERT INTO rainwater_events (field_id, date_event, rain_speed_ml_per_min, duration_min, collected_liters, notes) VALUES (?,?,?,?,?,?)',
+            [field_id, date_event, rain_speed_ml_per_min, duration_min, collected_liters, notes], async (err, result) => {
+                if (err) return res.status(500).json({ error: err });
+
+                const title = collected_liters >= capacity * 0.7
+                    ? 'Reservoir filling fast'
+                    : rain_speed_ml_per_min >= 45 && duration_min >= 90
+                        ? 'Heavy rain / flood risk'
+                        : 'Rain event logged';
+                const type = collected_liters >= capacity * 0.7 ? 'reservoir' : rain_speed_ml_per_min >= 45 && duration_min >= 90 ? 'flood' : 'rain';
+                const severity = collected_liters >= capacity * 0.7 || type === 'flood' ? 'warning' : 'info';
+                const messageText = type === 'reservoir'
+                    ? `Field ${field.field_name} collected ${collected_liters.toFixed(1)}L and has reached ${Math.min(100, (collected_liters / capacity) * 100).toFixed(1)}% of reservoir capacity.`
+                    : type === 'flood'
+                        ? `Heavy rain detected for ${field.field_name}: ${rain_speed_ml_per_min} ml/min for ${duration_min} min. Check for flood risk.`
+                        : `Rain recorded for ${field.field_name}: ${collected_liters.toFixed(1)} liters collected.`;
+
+                try {
+                    await createNotification(field_id, field.farmer_id, type, title, messageText, severity);
+                } catch (notifyErr) {
+                    console.error('Notification save failed:', notifyErr);
+                }
+
+                res.json({ message: 'Rainwater event logged!', id: result.insertId, collected_liters });
+            });
+    });
 });
 
 app.put('/api/rainwater/:id', (req, res) => {
@@ -264,38 +332,46 @@ app.get('/api/rainwater/calculate/:field_id', (req, res) => {
     const dateFrom = date_from || last30days.toISOString().split('T')[0];
     const dateTo = date_to || new Date().toISOString().split('T')[0];
 
-    // Get rainwater collection stats
-    const rainQuery = `SELECT 
-        COALESCE(SUM(collected_liters), 0) as total_collected,
-        COALESCE(AVG(rain_speed_ml_per_min), 0) as avg_rainfall,
-        COUNT(*) as event_count
-        FROM rainwater_events 
-        WHERE field_id = ? AND date_event BETWEEN ? AND ?`;
-
-    // Get average daily water usage (last 30 days from crops for this field)
-    const usageQuery = `SELECT 
-        COALESCE(SUM(wu.water_used_liters) / COUNT(DISTINCT wu.date_logged), 0) as avg_daily_usage
-        FROM water_usage wu
-        WHERE wu.field_id = ? AND wu.date_logged >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`;
-
-    let calculateResult = {};
-    db.query(rainQuery, [field_id, dateFrom, dateTo], (err, rainwater) => {
+    // Get field details and capacity
+    db.query('SELECT reservoir_capacity_liters FROM fields WHERE field_id = ?', [field_id], (err, fieldRows) => {
         if (err) return res.status(500).json({ error: err });
-        calculateResult.collected = rainwater[0].total_collected;
-        calculateResult.avg_rainfall = rainwater[0].avg_rainfall;
-        calculateResult.event_count = rainwater[0].event_count;
-        
-        // Assume 100L tank capacity per calculation
-        const tank_capacity = 100000;
-        calculateResult.percent_filled = Math.min(100, (calculateResult.collected / tank_capacity) * 100);
+        if (!fieldRows.length) return res.status(404).json({ error: 'Field not found' });
+        const capacity = fieldRows[0].reservoir_capacity_liters || 100000;
 
-        db.query(usageQuery, [field_id], (err, usage) => {
+        // Get rainwater collection stats
+        const rainQuery = `SELECT 
+            COALESCE(SUM(collected_liters), 0) as total_collected,
+            COALESCE(AVG(rain_speed_ml_per_min), 0) as avg_rainfall,
+            COUNT(*) as event_count
+            FROM rainwater_events 
+            WHERE field_id = ? AND date_event BETWEEN ? AND ?`;
+
+        // Get average daily water usage (last 30 days from crops for this field)
+        const usageQuery = `SELECT 
+            COALESCE(SUM(wu.water_used_liters) / COUNT(DISTINCT wu.date_logged), 0) as avg_daily_usage
+            FROM water_usage wu
+            WHERE wu.field_id = ? AND wu.date_logged >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`;
+
+        let calculateResult = {};
+        db.query(rainQuery, [field_id, dateFrom, dateTo], (err, rainwater) => {
             if (err) return res.status(500).json({ error: err });
-            calculateResult.avg_daily_usage = usage[0].avg_daily_usage || 0;
-            calculateResult.reserve_days = calculateResult.avg_daily_usage > 0 
-                ? Math.floor(calculateResult.collected / calculateResult.avg_daily_usage)
-                : 0;
-            res.json(calculateResult);
+            calculateResult.collected = rainwater[0].total_collected;
+            calculateResult.avg_rainfall = rainwater[0].avg_rainfall;
+            calculateResult.event_count = rainwater[0].event_count;
+            calculateResult.capacity = capacity;
+            calculateResult.percent_filled = Math.min(100, (calculateResult.collected / capacity) * 100);
+
+            db.query(usageQuery, [field_id], (err, usage) => {
+                if (err) return res.status(500).json({ error: err });
+                calculateResult.avg_daily_usage = usage[0].avg_daily_usage || 0;
+                calculateResult.reserve_days = calculateResult.avg_daily_usage > 0 
+                    ? Math.floor(calculateResult.collected / calculateResult.avg_daily_usage)
+                    : 0;
+                calculateResult.recommendation = calculateResult.reserve_days >= 5
+                    ? 'Use reservoir water conservatively for next crops and delay irrigation if possible.'
+                    : 'Reserve water for high-value crops and irrigate only when needed.';
+                res.json(calculateResult);
+            });
         });
     });
 });
@@ -314,25 +390,28 @@ app.post('/api/message/:field_id', (req, res) => {
     const { field_id } = req.params;
     const { message_type, message } = req.body;
     
-    // Get farmer phone and email for this field
-    db.query(`SELECT f.phone, fa.name as farmer_name, fa.farmer_id 
+    db.query(`SELECT fa.phone, fa.name as farmer_name, fa.farmer_id 
               FROM fields f 
               JOIN farmers fa ON f.farmer_id = fa.farmer_id 
-              WHERE f.field_id = ?`, [field_id], (err, results) => {
+              WHERE f.field_id = ?`, [field_id], async (err, results) => {
         if (err || !results.length) return res.status(400).json({ error: 'Field not found' });
         
-        const { phone, farmer_name } = results[0];
+        const { phone, farmer_name, farmer_id } = results[0];
         const timestamp = new Date().toLocaleString();
         const logMessage = `[${message_type.toUpperCase()}] Field ${field_id}: ${message} - ${farmer_name} - ${timestamp}`;
+
+        try {
+            await createNotification(field_id, farmer_id, message_type, `Alert for ${farmer_name}`, message, 'warning');
+        } catch (notifyErr) {
+            console.error('Notification save failed:', notifyErr);
+        }
         
-        // Log message to console (can be extended to database)
         console.log('📱 MESSAGE SENT:', logMessage);
         
-        // Optional: Send email alert
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
             const mailOptions = {
                 from: process.env.EMAIL_USER,
-                to: `${phone}@sms.com`,  // SMS gateway (Twilio-like)
+                to: `${phone}@sms.com`,
                 subject: `🌾 Water Management Alert: ${message_type}`,
                 text: `Dear ${farmer_name},\n\n${message}\n\nField ID: ${field_id}\nType: ${message_type}\nTime: ${timestamp}\n\nPlease take necessary action.`
             };
@@ -342,13 +421,44 @@ app.post('/api/message/:field_id', (req, res) => {
             });
         }
         
-        // Return success response
         res.json({ 
             success: true, 
             message: 'Alert sent', 
             logged: logMessage,
             phone: phone ? `${phone.slice(0, -4)}****` : 'N/A'
         });
+    });
+});
+
+app.get('/api/notifications', (req, res) => {
+    const conditions = [];
+    const params = [];
+    let query = `SELECT n.*, f.field_name, fa.name as farmer_name FROM notifications n
+                 JOIN fields f ON n.field_id = f.field_id
+                 JOIN farmers fa ON n.farmer_id = fa.farmer_id`;
+    if (req.query.field_id) {
+        conditions.push('n.field_id = ?');
+        params.push(req.query.field_id);
+    }
+    if (req.query.farmer_id) {
+        conditions.push('n.farmer_id = ?');
+        params.push(req.query.farmer_id);
+    }
+    if (req.query.unread === '1') {
+        conditions.push('n.is_read = 0');
+    }
+    if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+    query += ' ORDER BY n.created_at DESC';
+    db.query(query, params, (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results);
+    });
+});
+
+app.put('/api/notifications/:id/read', (req, res) => {
+    db.query('UPDATE notifications SET is_read = 1 WHERE notification_id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json({ message: 'Notification marked as read' });
     });
 });
 

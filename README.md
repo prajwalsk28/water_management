@@ -50,9 +50,14 @@ Water scarcity is one of the most pressing challenges in modern agriculture. Far
 
 ### 🌾 Field Management
 - Add fields linked to specific farmers
-- Record area (acres), soil type, and location
+- Record area (acres), soil type, location, and reservoir capacity
 - Edit and delete fields
 - Search and filter by soil type
+
+### 🔔 Notifications and Alerts
+- Auto-generate field alerts for heavy rain, reservoir fill, and manual emergency messages
+- Farmer portal notification feed with read/unread status
+- Send manual alerts from the portal to farmers
 
 ### 🌱 Crop Management
 - Register crops with sowing and harvest dates
@@ -84,16 +89,17 @@ Water scarcity is one of the most pressing challenges in modern agriculture. Far
 
 ## 🗄️ Database Design
 
-The system uses **6 related tables** in the `water_mgmt` database:
+The system uses **7 related tables** in the `water_mgmt` database:
 
 | Table | Description |
 |---|---|
 | `farmers` | Stores farmer name, phone, and village |
-| `fields` | Each field linked to a farmer via `farmer_id` (FK) |
+| `fields` | Each field linked to a farmer via `farmer_id` (FK), including reservoir capacity |
 | `crops` | Each crop linked to a field via `field_id` (FK) |
 | `irrigation_schedule` | Irrigation plans linked to fields |
 | `water_usage` | Daily water logs linked to both fields and crops |
 | `users` | Login credentials linked to each farmer |
+| `notifications` | Persistent alerts and portal notification history |
 
 ### Relationships
 ```
@@ -204,6 +210,12 @@ water_management/
 | POST/PUT/DELETE | /api/irrigation/:id | Irrigation CRUD |
 | GET | /api/water-usage | Get logs with date filter & alert status |
 | POST/DELETE | /api/water-usage/:id | Water usage CRUD |
+| GET | /api/rainwater | Get rainwater collection events |
+| POST | /api/rainwater | Log a new rainwater event and auto-generate alerts |
+| GET | /api/rainwater/calculate/:field_id | Calculate reservoir saved water, avg rainfall, and reserve days |
+| POST | /api/message/:field_id | Send a field-level alert message to the notification portal |
+| GET | /api/notifications | Get portal notifications |
+| PUT | /api/notifications/:id/read | Mark a notification as read |
 | GET | /api/summary | Per-farmer water usage summary |
 | GET | /api/chart-data | Data for dashboard charts |
 
