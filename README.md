@@ -87,6 +87,31 @@ Water scarcity is one of the most pressing challenges in modern agriculture. Far
 
 ---
 
+## 🌧️ Rainwater Harvesting Calculations
+
+The system includes calculations for rainwater harvesting to help farmers optimize water collection and usage. The following formulas are used:
+
+### Catchment Area Calculation
+```
+Catchment Area (m²) = field area in acres × 4047
+```
+
+### Water Saved Calculation
+```
+Water Saved (liters) = Catchment Area × (rainfall_mm / 1000) × 1000 × 0.8
+```
+*(0.8 = 80% efficiency, 20% lost to evaporation/runoff)*
+
+### Water Duration Calculation
+```
+Days Water Lasts = Water Saved ÷ Daily Crop Water Need
+Daily Crop Need = total water_requirement_liters ÷ crop growing days
+```
+
+These calculations are accessible via the `/api/rainwater/calculate/:field_id` endpoint, which provides reservoir saved water, average rainfall, and reserve days for each field.
+
+---
+
 ## 🗄️ Database Design
 
 The system uses **7 related tables** in the `water_mgmt` database:
